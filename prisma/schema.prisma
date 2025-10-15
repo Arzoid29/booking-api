@@ -1,0 +1,33 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id          String    @id @default(cuid())
+  email       String    @unique
+  name        String?
+  googleSub   String?   @unique
+  gcalAccess  String?
+  gcalRefresh String?
+  gcalExpiry  DateTime?
+  bookings    Booking[]
+  createdAt   DateTime  @default(now())
+}
+
+model Booking {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  startAt   DateTime
+  endAt     DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  deletedAt DateTime?
+ 
+  @@index([userId, startAt, endAt, deletedAt])
+}
