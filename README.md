@@ -27,7 +27,7 @@ cp .env.example .env   # fill in credentials
 pnpm start:dev         # http://localhost:4000
 .env example
 env
-Copy code
+
 DATABASE_URL="file:./dev.db"
 
 JWT_SECRET="put_a_long_random_secret_here"
@@ -50,7 +50,7 @@ Put Client ID/Secret into .env.
 
 Data model (Prisma)
 prisma
-Copy code
+
 model User {
   id           String    @id @default(cuid())
   email        String    @unique
@@ -93,12 +93,12 @@ Auth: Public
 Body
 
 json
-Copy code
+
 { "idToken": "GOOGLE_ID_TOKEN" }
 200 OK
 
 json
-Copy code
+
 {
   "token": "API_JWT",
   "user": { "id": "…", "email": "user@gmail.com", "name": "User" }
@@ -108,7 +108,7 @@ Copy code
 cURL
 
 bash
-Copy code
+
 curl -X POST http://localhost:4000/auth/google \
   -H "Content-Type: application/json" \
   -d '{"idToken":"<GOOGLE_ID_TOKEN>"}'
@@ -121,12 +121,12 @@ Auth: Bearer JWT
 200 OK
 
 json
-Copy code
+
 { "connected": true }
 cURL
 
 bash
-Copy code
+
 curl http://localhost:4000/calendar/status \
   -H "Authorization: Bearer <JWT>"
 GET /calendar/connect
@@ -137,12 +137,12 @@ Auth: Bearer JWT
 200 OK
 
 json
-Copy code
+
 { "url": "https://accounts.google.com/o/oauth2/v2/auth?..." }
 cURL
 
 bash
-Copy code
+
 curl http://localhost:4000/calendar/connect \
   -H "Authorization: Bearer <JWT>"
 GET /calendar/callback?code=...&state=...
@@ -153,7 +153,7 @@ Auth: Public (called by Google)
 200 OK: Plain text
 
 arduino
-Copy code
+
 Calendar connected. You can close this tab.
 400 / 401: invalid code/state
 
@@ -165,12 +165,12 @@ Auth: Bearer JWT
 200 OK
 
 json
-Copy code
+
 { "ok": true }
 cURL
 
 bash
-Copy code
+
 curl -X POST http://localhost:4000/calendar/disconnect \
   -H "Authorization: Bearer <JWT>"
 Bookings
@@ -192,7 +192,7 @@ Auth: Bearer JWT
 200 OK
 
 json
-Copy code
+
 [
   {
     "id": "…",
@@ -205,7 +205,7 @@ Copy code
 cURL
 
 bash
-Copy code
+
 curl http://localhost:4000/bookings/me \
   -H "Authorization: Bearer <JWT>"
 POST /bookings
@@ -216,7 +216,7 @@ Auth: Bearer JWT
 Body
 
 json
-Copy code
+
 {
   "title": "Meeting",
   "startAt": "2025-10-20T10:00:00.000Z",
@@ -231,7 +231,7 @@ Copy code
 cURL
 
 bash
-Copy code
+
 curl -X POST http://localhost:4000/bookings \
   -H "Authorization: Bearer <JWT)" \
   -H "Content-Type: application/json" \
@@ -244,7 +244,7 @@ Auth: Bearer JWT
 200 OK
 
 json
-Copy code
+
 { "ok": true }
 404 Not Found – booking does not exist
 
@@ -253,7 +253,7 @@ Copy code
 cURL
 
 bash
-Copy code
+
 curl -X DELETE http://localhost:4000/bookings/<BOOKING_ID> \
   -H "Authorization: Bearer <JWT>"
 Error model
@@ -271,7 +271,7 @@ CORS (dev)
 In main.ts:
 
 ts
-Copy code
+
 app.enableCors({
   origin: ["http://localhost:3000"],
   credentials: true,
