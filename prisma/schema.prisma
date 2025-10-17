@@ -1,5 +1,5 @@
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -20,13 +20,13 @@ model User {
 }
 
 model Booking {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
   title     String
   startAt   DateTime
   endAt     DateTime
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id])
   deletedAt DateTime?
  
   @@index([userId, startAt, endAt, deletedAt])

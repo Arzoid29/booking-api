@@ -1,7 +1,7 @@
 FROM node:20-alpine AS base
 
 # Install OS packages that Prisma/Node commonly rely on
-RUN apk add --no-cache openssl git
+RUN apk add --no-cache openssl git postgresql-client
 
 WORKDIR /app
 
@@ -21,9 +21,6 @@ COPY tsconfig.json tsconfig.build.json nest-cli.json ./
 COPY src ./src
 # Compile TypeScript without relying on global Nest CLI
 RUN pnpm exec tsc -p tsconfig.build.json
-
-# Create directory for SQLite database with proper permissions
-RUN mkdir -p /app/data && chmod 777 /app/data
 
 EXPOSE 4000
 ENV NODE_ENV=production

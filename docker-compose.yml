@@ -1,6 +1,24 @@
 version: "3.9"
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: booking-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: booking_user
+      POSTGRES_PASSWORD: booking_pass
+      POSTGRES_DB: booking_db
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U booking_user -d booking_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   api:
     build:
       context: .
@@ -10,9 +28,13 @@ services:
     env_file:
       - .env
     environment:
-      # Point to the data directory inside the container
-      - DATABASE_URL=file:/app/data/dev.db
+      - DATABASE_URL=postgresql://booking_user:booking_pass@postgres:5432/booking_db?schema=public
     volumes:
-      # Mount a directory for the database (not a file)
       - ./data:/app/data
     restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
