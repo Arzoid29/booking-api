@@ -2,10 +2,10 @@
 
 [![Language](https://img.shields.io/badge/language-TypeScript-blue.svg)](https://www.typescriptlang.org/)
 [![Framework](https://img.shields.io/badge/framework-NestJS-red.svg)](https://nestjs.com/)
-[![Database](https://img.shields.io/badge/database-Prisma%20%7C%20SQLite-lightgrey.svg)](https://www.prisma.io/)
+[![Database](https://img.shields.io/badge/database-Prisma%20%7C%20postgress-lightgrey.svg)](https://www.prisma.io/)
 [![Deployment](https://img.shields.io/badge/deployment-Docker-blue.svg)](https://www.docker.com/)
 
-A robust API built with **NestJS** for managing user bookings, featuring secure authentication via Google and seamless integration with **Google Calendar** to prevent scheduling conflicts. It uses **Prisma** as its ORM to interact with a **SQLite** database and is fully containerized for easy deployment with **Docker**.
+A robust API built with **NestJS** for managing user bookings, featuring secure authentication via Google and seamless integration with **Google Calendar** to prevent scheduling conflicts. It uses **Prisma** as its ORM to interact with a **postgress** database and is fully containerized for easy deployment with **Docker**.
 
 ## 📋 Table of Contents
 
@@ -39,7 +39,7 @@ The project follows a modular architecture, where each feature has a dedicated N
 To run the project locally, you need to create a `.env` file in the project's root directory. You can use the `.env.example` file as a template.
 
 ```env
-# Database connection URL (for SQLite in this case)
+# Database connection URL (for postgress in this case)
 DATABASE_URL="file:./dev.db"
 
 # A long, random, and secret string for signing JWTs
