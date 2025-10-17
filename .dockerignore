@@ -1,0 +1,26 @@
+# Dependencies and build output
+node_modules
+dist
+build
+
+# VCS and editor files
+.git
+.svn
+.hg
+.vscode
+.idea
+
+# Tests and coverage
+coverage
+.nyc_output
+generated
+
+# Env files
+.env
+.env.*
+
+# OS junk
+.DS_Store
+
+# Prisma local database file (we mount via compose instead)
+prisma/dev.db

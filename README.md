@@ -277,3 +277,28 @@ app.enableCors({
   credentials: true,
 });
 Tip: For production, consider migrating SQLite → Postgres, and use secure HttpOnly cookies via a small proxy route for login.
+
+## Docker Compose
+
+Run the API in Docker with the existing SQLite database file.
+
+1. Copy env and fill values:
+
+   ```bash
+   cp .env.example .env
+   # edit .env (JWT_SECRET, GOOGLE_* values)
+   ```
+
+2. Build and start with Docker Compose:
+
+   ```bash
+   docker compose build
+   docker compose up -d
+   ```
+
+3. API is available at `http://localhost:4000`.
+
+Notes:
+- The SQLite file is bind-mounted from `./prisma/dev.db` into the container, so data persists.
+- If you modify dependencies, re-run `docker compose build`.
+- For production, prefer Postgres and run Prisma migrations on startup.

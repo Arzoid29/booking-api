@@ -1,9 +1,8 @@
-// src/bookings/bookings.service.ts
 import { ConflictException, Injectable } from '@nestjs/common';
 
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { CalendarService } from '../calendar/calendar.service';
-import { PrismaService } from 'prisma/prisma.service';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class BookingsService {
