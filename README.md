@@ -40,7 +40,7 @@ To run the project locally, you need to create a `.env` file in the project's ro
 
 ```env
 # Database connection URL (for postgress in this case)
-DATABASE_URL="file:./dev.db"
+DATABASE_URL=""
 
 # A long, random, and secret string for signing JWTs
 JWT_SECRET="put_a_long_random_secret_here"
