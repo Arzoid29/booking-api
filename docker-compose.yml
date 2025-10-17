@@ -9,6 +9,9 @@ services:
       - "4000:4000"
     env_file:
       - .env
+    environment:
+      # Ensure Prisma uses the SQLite file inside the container
+      - DATABASE_URL=file:./prisma/dev.db
     volumes:
       - ./prisma/dev.db:/app/prisma/dev.db
     restart: unless-stopped
