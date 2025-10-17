@@ -1,304 +1,92 @@
-# Booking API (NestJS + Prisma + SQLite + Google Auth + Calendar)
+# Booking API with Google Calendar Integration
 
-## Overview
+[![Language](https://img.shields.io/badge/language-TypeScript-blue.svg)](https://www.typescriptlang.org/)
+[![Framework](https://img.shields.io/badge/framework-NestJS-red.svg)](https://nestjs.com/)
+[![Database](https://img.shields.io/badge/database-Prisma%20%7C%20SQLite-lightgrey.svg)](https://www.prisma.io/)
+[![Deployment](https://img.shields.io/badge/deployment-Docker-blue.svg)](https://www.docker.com/)
 
-- Google Sign-In (Google **ID Token** → API-issued **JWT**)
-- Bookings CRUD (create, list mine, delete)
-- Overlap checks: DB + **Google Calendar (readonly)**
-- SQLite + Prisma
+A robust API built with **NestJS** for managing user bookings, featuring secure authentication via Google and seamless integration with **Google Calendar** to prevent scheduling conflicts. It uses **Prisma** as its ORM to interact with a **SQLite** database and is fully containerized for easy deployment with **Docker**.
+
+## 📋 Table of Contents
+
+1.  [Project Architecture](#-project-architecture)
+2.  [Environment Setup](#-environment-setup)
+3.  [Database Schema](#-database-schema)
+4.  [Security (JWT Authentication)](#-security-jwt-authentication)
+5.  [Deployment with Docker](#-deployment-with-docker)
+6.  [API Endpoints](#-api-endpoints)
+    * [App Module (Root)](#app-module-root)
+    * [Auth Module](#auth-module)
+    * [Bookings Module](#bookings-module)
+    * [Calendar Module](#calendar-module)
 
 ---
 
-## Requirements
+## 🏛️ Project Architecture
 
-- Node 18+
-- PNPM (or npm)
-- Google Cloud project with OAuth 2.0 (Web)
+The project follows a modular architecture, where each feature has a dedicated NestJS module with clear responsibilities:
+
+* **`AppModule`**: The root module that imports and configures all other modules and global services.
+* **`AuthModule`**: Handles user authentication. It validates a Google `idToken` to verify the user's identity and issues a **JSON Web Token (JWT)** to authorize subsequent requests.
+* **`UsersModule`**: Manages business logic for users, such as creating or updating a user's profile after a successful Google sign-in (`upsertGoogleUser`).
+* **`BookingsModule`**: Controls all booking-related logic (create, list, delete). It validates new bookings against existing ones in the database and against events in the user's Google Calendar to prevent conflicts.
+* **`CalendarModule`**: Manages the integration with the Google Calendar API. It handles the **OAuth2** authorization flow to connect a user's Google account and access their calendar events.
 
 ---
 
-## Quick start
+## ⚙️ Environment Setup
 
-```bash
-pnpm install
-pnpm prisma generate
-pnpm prisma migrate dev
-cp .env.example .env   # fill in credentials
-pnpm start:dev         # http://localhost:4000
-.env example
-env
+To run the project locally, you need to create a `.env` file in the project's root directory. You can use the `.env.example` file as a template.
 
+```env
+# Database connection URL (for SQLite in this case)
 DATABASE_URL="file:./dev.db"
 
+# A long, random, and secret string for signing JWTs
 JWT_SECRET="put_a_long_random_secret_here"
 
+# Google Cloud OAuth 2.0 application credentials
 GOOGLE_CLIENT_ID="your_google_client_id"
 GOOGLE_CLIENT_SECRET="your_google_client_secret"
 GOOGLE_REDIRECT_URI="http://localhost:4000/calendar/callback"
-Google Cloud setup (required)
-OAuth consent screen → External (Testing). Add your login email to Test users.
 
-Enable: Google Calendar API.
-
-Credentials → OAuth client (Web)
-
-Authorized redirect URIs: http://localhost:4000/calendar/callback
-
-(Optional) Authorized JS origins: http://localhost:3000, http://localhost:4000
-
-Put Client ID/Secret into .env.
-
-Data model (Prisma)
-prisma
-
-model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
-  name         String?
-  googleSub    String?   @unique
-  gcalAccess   String?
-  gcalRefresh  String?
-  gcalExpiry   DateTime?
-  bookings     Booking[]
-  createdAt    DateTime  @default(now())
+🗃️ Database SchemaThe database schema is defined in the prisma/schema.prisma file and consists of two main models:UserRepresents a user in the system.FieldTypeDescriptionidStringUnique identifier (CUID).emailStringThe user's unique email address.nameString?The user's name (optional).googleSubString?The Google Subject ID, used for auth.gcalAccessString?Google Calendar API access token.gcalRefreshString?Google Calendar API refresh token.gcalExpiryDateTime?Expiry date for the access token.bookingsBooking[]A list of all bookings made by the user.BookingRepresents a booking created by a user.FieldTypeDescriptionidStringUnique identifier (CUID).userIdStringThe ID of the user who owns the booking.titleStringThe title or description of the booking.startAtDateTimeThe start date and time of the booking.endAtDateTimeThe end date and time of the booking.deletedAtDateTime?Timestamp for soft-deleting bookings.🔐 Security (JWT Authentication)Endpoint security is enforced using NestJS Guards and Passport's JWT strategy.JwtStrategy: This strategy validates the JWT sent in the Authorization header of incoming requests. It verifies the token's signature using the JWT_SECRET and attaches the user payload (ID and email) to the request object.JwtAuthGuard: This guard is applied to controllers or specific routes using the @UseGuards(JwtAuthGuard) decorator. It intercepts incoming requests and invokes the JwtStrategy to ensure the token is valid before granting access to the endpoint.🐳 Deployment with DockerThe repository is configured for easy containerization and deployment using Docker.Dockerfile: Defines a multi-stage build process to create a lean, optimized production image for the application. It installs dependencies, compiles the TypeScript code, and sets up the application for execution.docker-compose.yml: Orchestrates the service deployment. It builds the image from the Dockerfile and runs it as a container, handling port mapping and environment configuration.To build and run the service using Docker, execute the following command:Bashdocker-compose up --build
+🌐 API EndpointsApp Module (Root)GET /A basic health check endpoint to verify that the API is running.Controller: AppControllerDescription: Returns a simple greeting.Success Response (200): Hello World!Auth ModulePOST /auth/googleAuthenticates a user with their Google idToken and returns a JWT for use in protected requests.Request Body:JSON{
+  "idToken": "string"
 }
-
-model Booking {
-  id        String   @id @default(cuid())
-  userId    String
-  title     String
-  startAt   DateTime
-  endAt     DateTime
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
-
-  @@index([userId, startAt, endAt])
+idToken: The JWT provided by Google upon successful sign-in.Success Response (201):JSON{
+  "token": "ey...",
+  "user": {
+    "id": "cl...",
+    "email": "user@example.com",
+    "name": "John Doe"
+  }
 }
-Authentication flow
-Frontend obtains a Google ID Token (Google widget).
-
-Frontend POST /auth/google with { idToken }.
-
-API verifies with Google, upserts the user, returns JWT.
-
-Frontend sends Authorization: Bearer <JWT> to protected endpoints.
-
-API Endpoints
-Auth
-POST /auth/google
-Exchange a Google ID Token for the API JWT.
-
-Auth: Public
-
-Body
-
-json
-
-{ "idToken": "GOOGLE_ID_TOKEN" }
-200 OK
-
-json
-
-{
-  "token": "API_JWT",
-  "user": { "id": "…", "email": "user@gmail.com", "name": "User" }
-}
-401 Unauthorized – invalid Google token
-
-cURL
-
-bash
-
-curl -X POST http://localhost:4000/auth/google \
-  -H "Content-Type: application/json" \
-  -d '{"idToken":"<GOOGLE_ID_TOKEN>"}'
-Google Calendar
-GET /calendar/status
-Return whether the current user has Google Calendar connected.
-
-Auth: Bearer JWT
-
-200 OK
-
-json
-
-{ "connected": true }
-cURL
-
-bash
-
-curl http://localhost:4000/calendar/status \
-  -H "Authorization: Bearer <JWT>"
-GET /calendar/connect
-Return the Google OAuth consent URL.
-
-Auth: Bearer JWT
-
-200 OK
-
-json
-
-{ "url": "https://accounts.google.com/o/oauth2/v2/auth?..." }
-cURL
-
-bash
-
-curl http://localhost:4000/calendar/connect \
-  -H "Authorization: Bearer <JWT>"
-GET /calendar/callback?code=...&state=...
-Google redirects here after consent; the API exchanges the code for tokens and stores them.
-
-Auth: Public (called by Google)
-
-200 OK: Plain text
-
-arduino
-
-Calendar connected. You can close this tab.
-400 / 401: invalid code/state
-
-POST /calendar/disconnect (optional)
-Clear stored Google tokens (disconnect).
-
-Auth: Bearer JWT
-
-200 OK
-
-json
-
-{ "ok": true }
-cURL
-
-bash
-
-curl -X POST http://localhost:4000/calendar/disconnect \
-  -H "Authorization: Bearer <JWT>"
-Bookings
-Notes
-
-Server expects and stores UTC ISO strings.
-
-Overlap rules:
-
-Reject if an existing booking overlaps (startAt < end && endAt > start) for the same user.
-
-Also checks Google Calendar events in [startAt, endAt] if connected.
-
-GET /bookings/me
-List all bookings for the current user.
-
-Auth: Bearer JWT
-
-200 OK
-
-json
-
-[
+Error Response (401 Unauthorized):Returned if the idToken is invalid, expired, or malformed.Bookings Module🔐 All endpoints in this module require JWT authentication. The token must be provided in the Authorization: Bearer <token> header.GET /bookings/meRetrieves a list of all bookings belonging to the authenticated user, sorted by start date.Success Response (200):JSON[
   {
-    "id": "…",
-    "title": "Demo",
-    "startAt": "2025-10-20T10:00:00.000Z",
-    "endAt": "2025-10-20T11:00:00.000Z",
-    "createdAt": "2025-10-01T12:00:00.000Z"
+    "id": "cl...",
+    "userId": "cl...",
+    "title": "Team Meeting",
+    "startAt": "2023-10-27T10:00:00.000Z",
+    "endAt": "2023-10-27T11:00:00.000Z",
+    "createdAt": "...",
+    "deletedAt": null
   }
 ]
-cURL
-
-bash
-
-curl http://localhost:4000/bookings/me \
-  -H "Authorization: Bearer <JWT>"
-POST /bookings
-Create a booking.
-
-Auth: Bearer JWT
-
-Body
-
-json
-
-{
-  "title": "Meeting",
-  "startAt": "2025-10-20T10:00:00.000Z",
-  "endAt":   "2025-10-20T11:00:00.000Z"
+POST /bookingsCreates a new booking after performing several validations:The end date must be after the start date.The booking must not overlap with the user's existing bookings.The booking must not conflict with any events on the user's connected Google Calendar.Request Body:JSON{
+  "title": "string",
+  "startAt": "ISO_Date_String",
+  "endAt": "ISO_Date_String"
 }
-201 Created – returns created booking
-
-409 Conflict – overlaps DB booking or Google Calendar event
-
-400 Bad Request – invalid range (e.g., endAt <= startAt)
-
-cURL
-
-bash
-
-curl -X POST http://localhost:4000/bookings \
-  -H "Authorization: Bearer <JWT)" \
-  -H "Content-Type: application/json" \
-  -d '{"title":"Demo","startAt":"2025-10-20T10:00:00.000Z","endAt":"2025-10-20T11:00:00.000Z"}'
-DELETE /bookings/:id
-Hard-delete a booking (permanently removes it).
-
-Auth: Bearer JWT
-
-200 OK
-
-json
-
-{ "ok": true }
-404 Not Found – booking does not exist
-
-403 Forbidden – booking belongs to another user
-
-cURL
-
-bash
-
-curl -X DELETE http://localhost:4000/bookings/<BOOKING_ID> \
-  -H "Authorization: Bearer <JWT>"
-Error model
-401 Unauthorized – missing/invalid JWT
-
-403 Forbidden – resource belongs to another user
-
-404 Not Found – resource does not exist
-
-409 Conflict – overlapping time range
-
-400 Bad Request – validation error
-
-CORS (dev)
-In main.ts:
-
-ts
-
-app.enableCors({
-  origin: ["http://localhost:3000"],
-  credentials: true,
-});
-Tip: For production, consider migrating SQLite → Postgres, and use secure HttpOnly cookies via a small proxy route for login.
-
-## Docker Compose
-
-Run the API in Docker with the existing SQLite database file.
-
-1. Copy env and fill values:
-
-   ```bash
-   cp .env.example .env
-   # edit .env (JWT_SECRET, GOOGLE_* values)
-   ```
-
-2. Build and start with Docker Compose:
-
-   ```bash
-   docker compose build
-   docker compose up -d
-   ```
-
-3. API is available at `http://localhost:4000`.
-
-Notes:
-- The SQLite file is bind-mounted from `./prisma/dev.db` into the container, so data persists.
-- If you modify dependencies, re-run `docker compose build`.
-- For production, prefer Postgres and run Prisma migrations on startup.
+Success Response (201): Returns the newly created booking object.Error Response (409 Conflict):If the time range is invalid.If the booking overlaps with an existing one.If the booking conflicts with a Google Calendar event.DELETE /bookings/:idDeletes a specific booking by its ID.URL Parameters:id: The unique identifier of the booking to be deleted.Success Response (200):JSON{
+  "ok": true
+}
+Calendar Module🔐 Most endpoints in this module require JWT authentication.GET /calendar/statusChecks whether the authenticated user has connected their Google Calendar account.Success Response (200):JSON{
+  "connected": boolean
+}
+GET /calendar/connectGenerates a Google authorization URL. The frontend should redirect the user to this URL to grant the application access to their calendar.Success Response (200):JSON{
+  "url": "[https://accounts.google.com/o/oauth2/v2/auth](https://accounts.google.com/o/oauth2/v2/auth)?..."
+}
+GET /calendar/callbackThis endpoint is part of the OAuth2 flow and is not meant to be called directly. Google redirects the user to this callback URL after they grant authorization. The server exchanges the received authorization code for access tokens and stores them.POST /calendar/disconnectDisconnects the user's Google Calendar account from the application by clearing the stored access tokens from the database.Success Response (201):JSON{
+  "ok": true
+}
