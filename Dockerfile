@@ -22,8 +22,11 @@ COPY src ./src
 # Compile TypeScript without relying on global Nest CLI
 RUN pnpm exec tsc -p tsconfig.build.json
 
+# Create directory for SQLite database with proper permissions
+RUN mkdir -p /app/data && chmod 777 /app/data
+
 EXPOSE 4000
 ENV NODE_ENV=production
 
-# Run the compiled app
-CMD ["node", "dist/src/main.js"]
+# Run migrations and start the app
+CMD ["sh", "-c", "pnpm prisma migrate deploy && node dist/src/main.js"]

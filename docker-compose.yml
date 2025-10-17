@@ -10,8 +10,9 @@ services:
     env_file:
       - .env
     environment:
-      # Ensure Prisma uses the SQLite file inside the container
-      - DATABASE_URL=file:./prisma/dev.db
+      # Point to the data directory inside the container
+      - DATABASE_URL=file:/app/data/dev.db
     volumes:
-      - ./prisma/dev.db:/app/prisma/dev.db
+      # Mount a directory for the database (not a file)
+      - ./data:/app/data
     restart: unless-stopped

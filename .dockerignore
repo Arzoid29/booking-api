@@ -22,3 +22,5 @@ generated
 # OS junk
 .DS_Store
 
+# Prisma local database file (we mount via compose instead)
+prisma/dev.db
